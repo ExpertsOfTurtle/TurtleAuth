@@ -21,6 +21,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.turtlebone.auth.bean.CreateTokenRequest;
 import com.turtlebone.auth.bean.ProfileRequest;
+import com.turtlebone.auth.bean.VerifyTokenRequest;
 import com.turtlebone.auth.model.ProfileModel;
 import com.turtlebone.auth.model.TokenModel;
 import com.turtlebone.auth.service.ProfileService;
@@ -99,6 +100,32 @@ public class TokenController {
 			logger.warn("Fail! But I don't know why!");
 			return ResponseEntity.ok("FAIL");
 		}
+	}
+	
+	@RequestMapping(value="/verify", method = RequestMethod.POST)
+	public @ResponseBody ResponseEntity<?> verify(@RequestBody VerifyTokenRequest request) {
+		String username = request.getUsername();
+		String tokenId = request.getTokenId();
+		
+		if (StringUtil.isEmpty(request.getUsername())) {
+			logger.warn("Fail! Missing username");
+			return ResponseEntity.ok("Username is required");
+		} else if (StringUtil.isEmpty(request.getTokenId())) {
+			logger.warn("Fail! Missing tokenId");
+			return ResponseEntity.ok("tokenId is required");
+		}
+		
+		TokenModel token = tokenService.selectByTokenId(tokenId);
+		if (token == null) {
+			logger.warn("Fail! Token not exist");
+			return ResponseEntity.ok("tokenId 不存在");
+		}
+		if (token.getExpirytime() == null || token.getExpirytime().getTime() < new Date().getTime()) {
+			logger.warn("Fail! Token has expired");
+			return ResponseEntity.ok("tokenId 已经过期");
+		}
+		
+		return ResponseEntity.ok("OK");
 	}
 	
 	private String getTokenId() {

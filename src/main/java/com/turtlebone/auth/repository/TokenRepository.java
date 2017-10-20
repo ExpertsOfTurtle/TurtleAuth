@@ -22,9 +22,9 @@ public interface TokenRepository{
   	
 	int insertSelective(Token token);
 
-
     int selectCount(Token token);
 
     List<Token> selectPage(@Param("token") Token token, @Param("pageable") Pageable pageable);
-	
+    
+    Token selectByTokenId(String tokenId);
 }

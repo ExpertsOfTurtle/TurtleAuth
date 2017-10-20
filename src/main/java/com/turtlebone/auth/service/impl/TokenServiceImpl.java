@@ -92,5 +92,12 @@ public class TokenServiceImpl implements TokenService {
 	}
 
 
+	@Override
+	public TokenModel selectByTokenId(String tokenId) {
+		Token token = tokenRepo.selectByTokenId(tokenId);
+		return BeanCopyUtils.map(token, TokenModel.class);
+	}
+
+
 
 }

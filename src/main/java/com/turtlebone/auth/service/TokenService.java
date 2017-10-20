@@ -18,7 +18,7 @@ public interface TokenService{
 	
 	public int deleteByPrimaryKey(Integer id);
 	
-
 	public int selectCount(TokenModel tokenModel);
-	
+
+	public TokenModel selectByTokenId(String tokenId);
 }
