@@ -3,8 +3,8 @@ package com.turtlebone.auth.bean;
 import lombok.Data;
 
 @Data
-public class CreateTokenRequest {
+public class RenewTokenRequest {
+	protected String tokenId;
 	protected String username;
-	protected String datetime;
-	protected String signData;
+	protected Long extendSecond;
 }

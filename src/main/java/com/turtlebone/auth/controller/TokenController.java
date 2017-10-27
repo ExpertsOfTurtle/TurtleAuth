@@ -16,12 +16,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.turtlebone.auth.bean.CreateTokenRequest;
 import com.turtlebone.auth.bean.ProfileRequest;
+import com.turtlebone.auth.bean.RenewTokenRequest;
 import com.turtlebone.auth.bean.VerifyTokenRequest;
+import com.turtlebone.auth.exception.AuthException;
 import com.turtlebone.auth.model.ProfileModel;
 import com.turtlebone.auth.model.TokenModel;
 import com.turtlebone.auth.service.ProfileService;
@@ -104,26 +107,54 @@ public class TokenController {
 	
 	@RequestMapping(value="/verify", method = RequestMethod.POST)
 	public @ResponseBody ResponseEntity<?> verify(@RequestBody VerifyTokenRequest request) {
-		String username = request.getUsername();
-		String tokenId = request.getTokenId();
-		
-		if (StringUtil.isEmpty(request.getUsername())) {
-			logger.warn("Fail! Missing username");
-			return ResponseEntity.ok("Username is required");
-		} else if (StringUtil.isEmpty(request.getTokenId())) {
-			logger.warn("Fail! Missing tokenId");
-			return ResponseEntity.ok("tokenId is required");
+		logger.info("Verify [username={},tokenId={}]", request.getUsername(), request.getTokenId());
+		TokenModel token = null;
+		try {
+			token = tokenService.verifyToken(request.getTokenId(), request.getUsername());
+		} catch (AuthException e) {
+			String msg = e.getErrorMesage();
+			logger.error(msg);
+			return ResponseEntity.ok(msg);
+		}
+		logger.info("Verification successfully! {}", token);
+		return ResponseEntity.ok("OK");
+	}
+	@RequestMapping(value="/verify", method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<?> verify(@RequestParam String username, @RequestParam String tokenId) {
+		logger.info("Verify [username={},tokenId={}]", username, tokenId);
+		TokenModel token = null;
+		try {
+			token = tokenService.verifyToken(tokenId, username);
+		} catch (AuthException e) {
+			String msg = e.getErrorMesage();
+			logger.error(msg);
+			return ResponseEntity.ok(msg);
+		}
+		logger.info("Verification successfully! {}", token);
+		return ResponseEntity.ok("OK");
+	}
+	@RequestMapping(value="/renew", method = RequestMethod.POST)
+	public @ResponseBody ResponseEntity<?> renew(@RequestBody RenewTokenRequest request) {
+		TokenModel token = null;
+		try {
+			token = tokenService.verifyToken(request.getTokenId(), request.getUsername());
+		} catch (AuthException e) {
+			String msg = e.getErrorMesage();
+			logger.error(msg);
+			return ResponseEntity.ok(msg);
 		}
 		
-		TokenModel token = tokenService.selectByTokenId(tokenId);
-		if (token == null) {
-			logger.warn("Fail! Token not exist");
-			return ResponseEntity.ok("tokenId 不存在");
+		Long second = request.getExtendSecond();
+		if (second == null || second <= 0) {
+			logger.error("extendSceond[{}] incorrect", second);
+			return ResponseEntity.ok("ExtendSecond incorrect");
 		}
-		if (token.getExpirytime() == null || token.getExpirytime().getTime() < new Date().getTime()) {
-			logger.warn("Fail! Token has expired");
-			return ResponseEntity.ok("tokenId 已经过期");
-		}
+		
+		Date date = new Date();
+		date.setTime(date.getTime() + second * 1000);
+		token.setExpirytime(date);
+		tokenService.updateByPrimaryKey(token);
+		logger.info("Token[{}] has been renewed to [{}]", request.getTokenId(), date);
 		
 		return ResponseEntity.ok("OK");
 	}

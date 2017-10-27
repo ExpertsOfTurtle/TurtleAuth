@@ -1,15 +1,20 @@
 
 package com.turtlebone.auth.service.impl;
 
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-
+import com.turtlebone.auth.bean.VerifyTokenRequest;
 import com.turtlebone.auth.entity.Token;
+import com.turtlebone.auth.exception.AuthException;
 import com.turtlebone.auth.repository.TokenRepository;
 import com.turtlebone.auth.model.TokenModel;
 import com.turtlebone.auth.service.TokenService;
 import com.turtlebone.auth.util.BeanCopyUtils;
+import com.turtlebone.auth.util.StringUtil;
 
 @Service
 public class TokenServiceImpl implements TokenService {
@@ -96,6 +101,29 @@ public class TokenServiceImpl implements TokenService {
 	public TokenModel selectByTokenId(String tokenId) {
 		Token token = tokenRepo.selectByTokenId(tokenId);
 		return BeanCopyUtils.map(token, TokenModel.class);
+	}
+
+
+	@Override
+	public TokenModel verifyToken(String tokenId, String username) throws AuthException{
+		if (StringUtil.isEmpty(username)) {
+			throw new AuthException("Fail! Missing username");
+			
+		} else if (StringUtil.isEmpty(tokenId)) {
+			throw new AuthException("tokenId is required");
+		}
+		
+		TokenModel token = selectByTokenId(tokenId);
+		if (token == null) {
+			throw new AuthException("tokenId 不存在");
+		}
+		if (!token.getUsername().equals(username)) {
+			throw new AuthException("username&tokenId信息不匹配");
+		}
+		if (token.getExpirytime() == null || token.getExpirytime().getTime() < new Date().getTime()) {
+			throw new AuthException("tokenId 已经过期");
+		}
+		return token;
 	}
 
 

@@ -1,6 +1,8 @@
 
 package com.turtlebone.auth.service;
 
+import com.turtlebone.auth.bean.VerifyTokenRequest;
+import com.turtlebone.auth.exception.AuthException;
 import com.turtlebone.auth.model.TokenModel;
 import java.util.Date;
 
@@ -21,4 +23,6 @@ public interface TokenService{
 	public int selectCount(TokenModel tokenModel);
 
 	public TokenModel selectByTokenId(String tokenId);
+	
+	public TokenModel verifyToken(String tokenId, String username) throws AuthException;
 }
